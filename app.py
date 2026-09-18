@@ -1,7 +1,6 @@
 import os
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
 import cloudinary
 import cloudinary.uploader
 
@@ -18,7 +17,8 @@ cloudinary.config(
     secure = True
 )
 
-class Item(db.Model):
+class RegisteredItem(db.Model):
+    __tablename__ = 'registered_items'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50))
@@ -31,19 +31,16 @@ class Item(db.Model):
 
 with app.app_context():
     db.create_all()
-    # Lightweight migration check: Add the column safely if it's missing in your existing DB table
-    try:
-        db.session.execute(text("ALTER TABLE item ADD COLUMN status VARCHAR(20) DEFAULT 'Lost';"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
 
 @app.route('/', methods=['GET'])
 def home():
-    items = Item.query.order_by(Item.id.desc()).all()
-    lost_count = Item.query.filter_by(status='Lost').count()
-    found_count = Item.query.filter_by(status='Found').count()
-    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
+    try:
+        items = RegisteredItem.query.order_by(RegisteredItem.id.desc()).all()
+        lost_count = RegisteredItem.query.filter_by(status='Lost').count()
+        found_count = RegisteredItem.query.filter_by(status='Found').count()
+        return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
+    except Exception as e:
+        return jsonify({"error": "Database loading error", "details": str(e)}), 500
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
@@ -63,7 +60,7 @@ def report_lost():
             upload_result = cloudinary.uploader.upload(image_file)
             image_url = upload_result.get('secure_url')
         
-        new_item = Item(
+        new_item = RegisteredItem(
             name=item_name,
             category=category,
             description=description,
