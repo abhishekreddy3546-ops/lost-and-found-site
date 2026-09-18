@@ -34,37 +34,10 @@ with app.app_context():
 
 @app.route('/', methods=['GET'])
 def home():
-    return render_template('index.html')
-
-@app.route('/api/items', methods=['GET'])
-def get_items():
-    try:
-        items_query = RegisteredItem.query.order_by(RegisteredItem.id.desc()).all()
-        lost_count = RegisteredItem.query.filter_by(status='Lost').count()
-        found_count = RegisteredItem.query.filter_by(status='Found').count()
-        
-        items_list = []
-        for item in items_query:
-            items_list.append({
-                "id": item.id,
-                "name": item.name,
-                "category": item.category,
-                "location": item.location,
-                "date": item.date,
-                "contact": item.contact,
-                "description": item.description,
-                "image_url": item.image_url,
-                "status": item.status
-            })
-            
-        return jsonify({
-            "items": items_list,
-            "lost_count": lost_count,
-            "found_count": found_count,
-            "total_count": len(items_list)
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    items = RegisteredItem.query.order_by(RegisteredItem.id.desc()).all()
+    lost_count = RegisteredItem.query.filter_by(status='Lost').count()
+    found_count = RegisteredItem.query.filter_by(status='Found').count()
+    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
@@ -97,12 +70,7 @@ def report_lost():
         db.session.add(new_item)
         db.session.commit()
         
-        # FIXED: Return clean JSON status to allow JavaScript pipelines to execute updates
-        return jsonify({
-            "status": "success",
-            "message": "Report logged cleanly in backend pipeline",
-            "item_id": new_item.id
-        }), 201
+        return redirect(url_for('home'))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
