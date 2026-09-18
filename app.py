@@ -1,172 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost & Found Community Hub</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #2c3e50; margin: 0; font-size: 2.5rem; }
-        .header p { color: #7f8c8d; font-size: 1rem; margin: 5px 0 0 0; }
-        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #7f8c8d; }
-        .stat-card.total { border-top-color: #2980b9; }
-        .stat-card.lost { border-top-color: #e74c3c; }
-        .stat-card.found { border-top-color: #2ecc71; }
-        .stat-card h3 { margin: 0 0 10px 0; color: #7f8c8d; font-size: 1.1rem; }
-        .stat-card .number { font-size: 2rem; font-weight: bold; color: #2c3e50; }
-        .section-block { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 40px; }
-        .section-block.lost-section { border-left: 6px solid #e74c3c; }
-        .section-block.found-section { border-left: 6px solid #2ecc71; }
-        .section-title { margin-top: 0; margin-bottom: 20px; font-size: 1.6rem; color: #2c3e50; font-weight: bold; }
-        .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; color: #495057; }
-        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; }
-        .btn-submit { color: white; border: none; padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; text-transform: uppercase; display: block; }
-        .lost-section .btn-submit { background-color: #e74c3c; }
-        .lost-section .btn-submit:hover { background-color: #c0392b; }
-        .found-section .btn-submit { background-color: #2ecc71; }
-        .found-section .btn-submit:hover { background-color: #27ae60; }
-        .feed-container { max-height: 480px; overflow-y: auto; padding-right: 5px; }
-        .item-card { background: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; }
-        .item-card img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #e9ecef; }
-        .item-details { flex: 1; }
-        .item-details h4 { margin: 0 0 6px 0; color: #2c3e50; font-size: 1.2rem; }
-        .item-details p { margin: 4px 0; font-size: 0.9rem; color: #6c757d; }
-        .empty-state { text-align: center; color: #95a5a6; padding: 30px; background: #fafafa; border-radius: 6px; border: 1px dashed #dee2e6; }
-    </style>
-</head>
-<body>
+import os
+from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+import cloudinary
+import cloudinary.uploader
 
-    <div class="header">
-        <h1>🔍 Lost & Found Hub</h1>
-        <p>Global Community Registry Platform</p>
-    </div>
+app = Flask(__name__)
 
-    <div class="stats-container">
-        <div class="stat-card total">
-            <h3>Total Registered Records</h3>
-            <div class="number">{{ items|length }}</div>
-        </div>
-        <div class="stat-card lost">
-            <h3>Active Lost Reports</h3>
-            <div class="number">{{ lost_count }}</div>
-        </div>
-        <div class="stat-card found">
-            <h3>Recovered Found Items</h3>
-            <div class="number">{{ found_count }}</div>
-        </div>
-    </div>
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-    <!-- TOP SECTION: LOST ITEMS -->
-    <div class="section-block lost-section">
-        <div class="section-title">🔴 Lost Items Panel</div>
-        <div class="split-grid">
-            <div>
-                <form action="/report-lost" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="status" value="Lost">
-                    <div class="form-group">
-                        <label>Item Name</label>
-                        <input type="text" name="itemName" placeholder="What did you lose?" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category">
-                            <option value="Electronics">Electronics</option>
-                            <option value="Documents">Documents / IDs</option>
-                            <option value="Clothing">Clothing & Bags</option>
-                            <option value="Keys">Keys</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Reference Image</label>
-                        <input type="file" name="image" accept="image/*">
-                    </div>
-                    <div class="form-group">
-                        <label>Location Where Lost</label>
-                        <input type="text" name="location" placeholder="e.g., Central Park Coffee Shop">
-                    </div>
-                    <div class="form-group">
-                        <label>Date When Lost</label>
-                        <input type="date" name="date">
-                    </div>
-                    <div class="form-group">
-                        <label>Your Contact Information</label>
-                        <input type="text" name="contact" placeholder="Email address or Phone number" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Additional Details</label>
-                        <textarea name="description" rows="2" placeholder="Color, brand markings..." required></textarea>
-                    </div>
-                    <button type="submit" class="btn-submit">Submit Lost Report</button>
-                </form>
-            </div>
-            <div>
-                <label style="margin-bottom: 10px; font-weight: bold; display: block;">📋 Live Lost Feed</label>
-                <div class="feed-container">
-                    {% set has_lost = false %}
-                    {% for item in items %}
-                        {% if item.status == 'Lost' %}
-                            {% set has_lost = true %}
-                            <div class="item-card">
-                                {% if item.image_url %}
-                                    <img src="{{ item.image_url }}" alt="Item image">
-                                {% else %}
-                                    <div style="width:100px; height:100px; background:#e9ecef; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem;">No Photo</div>
-                                {% endif %}
-                                <div class="item-details">
-                                    <h4>{{ item.name }}</h4>
-                                    <p><strong>Category:</strong> {{ item.category }}</p>
-                                    <p><strong>Location Where Lost:</strong> {{ item.location or 'Not provided' }}</p>
-                                    <p><strong>Date When Lost:</strong> {{ item.date or 'Not provided' }}</p>
-                                    <p><strong>Contact:</strong> <a href="tel:{{ item.contact }}">{{ item.contact }}</a></p>
-                                    <p><strong>Description:</strong> {{ item.description }}</p>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                    {% if not has_lost %}
-                        <div class="empty-state">No lost reports registered yet.</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key = os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
+    secure = True
+)
 
-    <!-- BOTTOM SECTION: FOUND ITEMS -->
-    <div class="section-block found-section">
-        <div class="section-title">🟢 Found Items Panel</div>
-        <div class="split-grid">
-            <div>
-                <form action="/report-lost" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="status" value="Found">
-                    <div class="form-group">
-                        <label>Item Name</label>
-                        <input type="text" name="itemName" placeholder="What did you find?" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category">
-                            <option value="Electronics">Electronics</option>
-                            <option value="Documents">Documents / IDs</option>
-                            <option value="Clothing">Clothing & Bags</option>
-                            <option value="Keys">Keys</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Found Item Image</label>
-                        <input type="file" name="image" accept="image/*">
-                    </div>
-                    <div class="form-group">
-                        <label>Location Where Found</label>
-                        <input type="text" name="location" placeholder="e.g., Library Second Floor Classroom">
-                    </div>
-                    <div class="form-group">
-                        <label>Date When Found</label>
-                        <input type="date" name="date">
-                    </div>
-                    <div class="form-group">
+class RegisteredItem(db.Model):
+    __tablename__ = 'registered_items'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50))
+    location = db.Column(db.String(100))
+    date = db.Column(db.String(50))
+    contact = db.Column(db.String(100))
+    description = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(255))
+    status = db.Column(db.String(20), default='Lost')
+
+with app.app_context():
+    db.create_all()
+
+@app.route('/', methods=['GET'])
+def home():
+    items = RegisteredItem.query.order_by(RegisteredItem.id.desc()).all()
+    lost_count = RegisteredItem.query.filter_by(status='Lost').count()
+    found_count = RegisteredItem.query.filter_by(status='Found').count()
+    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
+
+@app.route('/report-lost', methods=['POST'])
+def report_lost():
+    try:
+        item_name = request.form.get('itemName')
+        category = request.form.get('category')
+        description = request.form.get('description')
+        location = request.form.get('location')
+        date = request.form.get('date')
+        contact = request.form.get('contact')
+        status = request.form.get('status', 'Lost')
+        
+        image_file = request.files.get('image')
+        image_url = None
+        
+        if image_file and image_file.filename != '':
+            upload_result = cloudinary.uploader.upload(image_file)
+            image_url = upload_result.get('secure_url')
+        
+        new_item = RegisteredItem(
+            name=item_name,
+            category=category,
+            description=description,
+            location=location,
+            date=date,
+            contact=contact,
+            image_url=image_url,
+            status=status
+        )
+        db.session.add(new_item)
+        db.session.commit()
+        
+        return redirect(url_for('home'))
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
