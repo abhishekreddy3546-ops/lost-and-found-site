@@ -4,25 +4,8 @@ import base64
 
 app = Flask(__name__)
 
-# Single combined memory database holding all items together
-items_database = [
-    {
-        "title": "Black Leather Wallet", 
-        "status": "Found", 
-        "description": "Found on the bus bench containing ID cards.", 
-        "contact_number": "+9876543210",
-        "place": "Downtown Bus Stop",
-        "image_data": ""
-    },
-    {
-        "title": "Sample Golden Ring", 
-        "status": "Lost", 
-        "description": "Gold band with a small gemstone inscription.", 
-        "contact_number": "+1234567890",
-        "place": "Central Station Food Court",
-        "image_data": ""
-    }
-]
+# The database is now completely empty, ready for live entries!
+items_database = []
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -76,7 +59,7 @@ HTML_TEMPLATE = """
     <p class="tagline">Controlled instantly by everyone. Post your item below.</p>
     
     <div class="forms-container">
-        <!-- 🔴 SEPARATE PLACE TO ENTER LOST ITEMS -->
+        <!-- 🔴 Separate Entry for Lost Items -->
         <div class="form-box lost-box">
             <h3 class="lost-title">🔴 Report a Lost Item</h3>
             <form action="/add/Lost" method="POST" enctype="multipart/form-data" style="box-shadow:none; padding:0;">
@@ -99,7 +82,7 @@ HTML_TEMPLATE = """
             </form>
         </div>
 
-        <!-- 🟢 SEPARATE PLACE TO ENTER FOUND ITEMS -->
+        <!-- 🟢 Separate Entry for Found Items -->
         <div class="form-box found-box">
             <h3 class="found-title">🟢 Report a Found Item</h3>
             <form action="/add/Found" method="POST" enctype="multipart/form-data" style="box-shadow:none; padding:0;">
@@ -123,11 +106,11 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- 📋 BOTH SUBMISSIONS SHOW UP HERE IN THE SAME PLACE -->
-    <h2 class="feed-heading">📋 All Live Bulletins (Lost & Found Combined)</h2>
+    <!-- 📋 Combined Live Bulletin Feed -->
+    <h2 class="feed-heading">📋 Live Bulletins (Lost & Found Combined)</h2>
     
     {% if not items %}
-    <p style="color: #999; font-style: italic; text-align: center;">The notice board is currently empty.</p>
+    <p style="color: #999; font-style: italic; text-align: center; margin-top: 30px;">The notice board is currently empty. Be the first to report an item!</p>
     {% endif %}
 
     {% for item in items %}
@@ -140,8 +123,8 @@ HTML_TEMPLATE = """
         {% endif %}
         
         <div class="meta-info">
-            📍 <b>📍 {{ 'Lost Place' if item.status == 'Lost' else 'Found Place' }}:</b> {{ item.place }}<br>
-            📞 <b>📞 Contact Number:</b> <a href="tel:{{ item.contact_number }}">{{ item.contact_number }}</a>
+            📍 <b>{{ 'Lost Place' if item.status == 'Lost' else 'Found Place' }}:</b> {{ item.place }}<br>
+            📞 <b>Contact Number:</b> <a href="tel:{{ item.contact_number }}">{{ item.contact_number }}</a>
         </div>
     </div>
     {% endfor %}
@@ -151,7 +134,6 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def home():
-    # Returns all items mixed together in the exact same feed layout
     return render_template_string(HTML_TEMPLATE, items=items_database)
 
 @app.route('/add/<status_type>', methods=['POST'])
@@ -166,14 +148,13 @@ def add_item(status_type):
 
     new_post = {
         "title": request.form.get('title'),
-        "status": status_type, # Explicitly sets "Lost" or "Found" depending on which box was used
+        "status": status_type,
         "place": request.form.get('place'),
         "description": request.form.get('desc'),
         "contact_number": request.form.get('contact_number') or "None Provided",
         "image_data": image_base64_url
     }
     
-    # Inserts right into the shared feed
     items_database.insert(0, new_post)
     return redirect('/')
 
