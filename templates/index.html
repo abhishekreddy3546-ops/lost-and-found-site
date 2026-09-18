@@ -148,11 +148,9 @@
                             <p><strong>Category:</strong> {{ item.category }}</p>
                             <p><strong>Location:</strong> {{ item.location }}</p>
                             <p><strong>Date:</strong> {{ item.date }}</p>
-                            <p><strong>Contact:</strong> {{ item.contact }}</p>
+                            <p><strong>Contact:</strong> [{{ item.contact }}](tel:{{ item.contact }})</p>
                             <p><strong>Description:</strong> {{ item.description }}</p>
                         </div>
                     </div>
                 {% endfor %}
                 <div class="empty-state" id="filterEmptyText" style="display: none;">No items match your criteria.</div>
-            </div>
-        </div>
