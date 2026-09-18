@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 import cloudinary
 import cloudinary.uploader
 
@@ -29,24 +30,20 @@ class Item(db.Model):
     status = db.Column(db.String(20), default='Lost')
 
 with app.app_context():
+    db.create_all()
+    # Lightweight migration check: Add the column safely if it's missing in your existing DB table
     try:
-        db.create_all()
+        db.session.execute(text("ALTER TABLE item ADD COLUMN status VARCHAR(20) DEFAULT 'Lost';"))
+        db.session.commit()
     except Exception:
-        db.drop_all()
-        db.create_all()
+        db.session.rollback()
 
 @app.route('/', methods=['GET'])
 def home():
-    try:
-        items = Item.query.order_by(Item.id.desc()).all()
-        lost_count = Item.query.filter_by(status='Lost').count()
-        found_count = Item.query.filter_by(status='Found').count()
-        return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
-    except Exception as e:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-        return redirect(url_for('home'))
+    items = Item.query.order_by(Item.id.desc()).all()
+    lost_count = Item.query.filter_by(status='Lost').count()
+    found_count = Item.query.filter_by(status='Found').count()
+    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
