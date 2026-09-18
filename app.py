@@ -18,18 +18,18 @@ cloudinary.config(
     secure = True
 )
 
-class CommunityHubItem(db.Model):
-    __tablename__ = 'community_hub_items'
+class FinalHubItem(db.Model):
+    __tablename__ = 'final_hub_items'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50))
     location = db.Column(db.String(100))
-    date_event = db.Column(db.String(50))  # User input date
+    date_event = db.Column(db.String(50))
     contact = db.Column(db.String(100))
     description = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(255))
     status = db.Column(db.String(20), default='Lost')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Background auto-delete tracker
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
     db.create_all()
@@ -38,24 +38,28 @@ def clean_expired_items():
     """Background helper to automatically delete entries older than 7 days"""
     try:
         one_week_ago = datetime.utcnow() - timedelta(days=7)
-        expired_items = CommunityHubItem.query.filter(CommunityHubItem.created_at < one_week_ago).all()
+        expired_items = FinalHubItem.query.filter(FinalHubItem.created_at < one_week_ago).all()
         for item in expired_items:
             db.session.delete(item)
         if expired_items:
             db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print(f"Auto-cleanup error: {e}")
 
 @app.route('/', methods=['GET'])
 def home():
-    # Clean up old records every single time the home dashboard is requested
-    clean_expired_items()
-    
-    items = CommunityHubItem.query.order_by(CommunityHubItem.id.desc()).all()
-    lost_count = CommunityHubItem.query.filter_by(status='Lost').count()
-    found_count = CommunityHubItem.query.filter_by(status='Found').count()
-    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
+    try:
+        clean_expired_items()
+        items = FinalHubItem.query.order_by(FinalHubItem.id.desc()).all()
+        lost_count = FinalHubItem.query.filter_by(status='Lost').count()
+        found_count = FinalHubItem.query.filter_by(status='Found').count()
+        return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
+    except Exception as e:
+        # Self-healing fallback if database gets structurally out of sync
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+        return redirect(url_for('home'))
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
@@ -75,7 +79,7 @@ def report_lost():
             upload_result = cloudinary.uploader.upload(image_file)
             image_url = upload_result.get('secure_url')
         
-        new_item = CommunityHubItem(
+        new_item = FinalHubItem(
             name=item_name,
             category=category,
             description=description,
