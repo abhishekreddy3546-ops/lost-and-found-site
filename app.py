@@ -4,7 +4,7 @@ import base64
 
 app = Flask(__name__)
 
-# Updated database columns to store contact information and location data properly
+# This database holds all sample posts in memory
 items_database = [
     {
         "title": "Sample Golden Ring", 
@@ -12,6 +12,14 @@ items_database = [
         "description": "Gold band with a small gemstone inscription.", 
         "contact_number": "+1234567890",
         "place": "Central Station Food Court",
+        "image_data": ""
+    },
+    {
+        "title": "Black Leather Wallet", 
+        "status": "Found", 
+        "description": "Found on the bus bench containing ID cards.", 
+        "contact_number": "+9876543210",
+        "place": "Downtown Bus Stop",
         "image_data": ""
     }
 ]
@@ -25,12 +33,21 @@ HTML_TEMPLATE = """
     <title>Last and Found</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background-color: #f9f9f9; color: #333; }
-        h1 { text-align: center; color: #2c3e50; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .tagline { text-align: center; color: #666; margin-bottom: 25px; }
+        
+        /* Navigation Tabs Style */
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .tab-btn { padding: 10px 20px; background-color: #e0e0e0; color: #555; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .tab-btn:hover { background-color: #d0d0d0; }
+        .tab-btn.active { background-color: #3498db; color: white; }
+        
         form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
         input, select, textarea { width: 100%; padding: 10px; margin: 8px 0 16px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         textarea { height: 80px; resize: vertical; }
-        button { width: 100%; background-color: #3498db; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #2980b9; }
+        button.submit-btn { width: 100%; background-color: #2ecc71; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button.submit-btn:hover { background-color: #27ae60; }
+        
         .card { background: white; border: 1px solid #ddd; padding: 20px; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .Lost { border-left: 6px solid #e74c3c; }
         .Found { border-left: 6px solid #2ecc71; }
@@ -39,26 +56,33 @@ HTML_TEMPLATE = """
         .badge-Found { background-color: #2ecc71; }
         .uploaded-img { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 12px; display: block; object-fit: contain; }
         .meta-info { margin-top: 10px; font-size: 13px; color: #555; background: #f0f2f5; padding: 8px; border-radius: 4px; }
+        .meta-info a { color: #3498db; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>🕵️‍♂️ Last and Found</h1>
-    <p style="text-align: center; color: #666;">A live notice board controlled instantly by everyone.</p>
+    <p class="tagline">A live notice board controlled instantly by everyone.</p>
     
+    <!-- Top Board Filter Tabs -->
+    <div class="tabs">
+        <a href="/" class="tab-btn {% if current_filter == 'all' %}active{% endif %}">📋 All Items</a>
+        <a href="/?filter=Lost" class="tab-btn {% if current_filter == 'Lost' %}active{% endif %}">🔴 Lost Items</a>
+        <a href="/?filter=Found" class="tab-btn {% if current_filter == 'Found' %}active{% endif %}">🟢 Found Items</a>
+    </div>
+    
+    <!-- Submission Form -->
     <form action="/add" method="POST" enctype="multipart/form-data">
         <label><b>Item Name</b></label>
         <input type="text" name="title" placeholder="What did you lose or find?" required>
         
         <label><b>Status</b></label>
-        <!-- Added id="statusSelect" to trace choices with JavaScript -->
         <select name="status" id="statusSelect" onchange="updateLocationLabel()">
             <option value="Lost">Lost</option>
             <option value="Found">Found</option>
         </select>
         
-        <!-- The label text changes dynamically via the JavaScript code down below -->
         <label><b id="locationLabel">Lost Place</b></label>
-        <input type="text" name="place" id="placeInput" placeholder="Where did it happen?" required>
+        <input type="text" name="place" id="placeInput" placeholder="Where was it lost?" required>
 
         <label><b>Description</b></label>
         <textarea name="desc" placeholder="Provide extra details (Color, shape, distinctive markers...)" required></textarea>
@@ -66,14 +90,18 @@ HTML_TEMPLATE = """
         <label><b>Upload a Photo of the Item (Optional)</b></label>
         <input type="file" name="item_photo" accept="image/*">
         
-        <!-- Replaced Name label with Contact Number layout -->
         <label><b>Contact Number</b></label>
         <input type="tel" name="contact_number" placeholder="Enter phone number to reach you" required>
         
-        <button type="submit">Post to Live Board</button>
+        <button type="submit" class="submit-btn">Post to Live Board</button>
     </form>
 
-    <h2>Live Bulletins:</h2>
+    <h2>Showing: {{ current_filter.capitalize() }} Bulletins</h2>
+    
+    {% if not items %}
+    <p style="color: #999; font-style: italic;">No items posted in this category yet.</p>
+    {% endif %}
+
     {% for item in items %}
     <div class="card {{ item.status }}">
         <h3>{{ item.title }} <span class="status-badge badge-{{ item.status }}">{{ item.status }}</span></h3>
@@ -84,13 +112,12 @@ HTML_TEMPLATE = """
         {% endif %}
         
         <div class="meta-info">
-            📍 <b>📍 Location:</b> {{ item.place }}<br>
-            📞 <b>📞 Contact Number:</b> <a href="tel:{{ item.contact_number }}">{{ item.contact_number }}</a>
+            📍 <b>Location:</b> {{ item.place }}<br>
+            📞 <b>Contact Number:</b> [{{ item.contact_number }}](tel:{{ item.contact_number }})
         </div>
     </div>
     {% endfor %}
 
-    <!-- JavaScript script handles swapping labels on the fly without page reloads -->
     <script>
     function updateLocationLabel() {
         var status = document.getElementById("statusSelect").value;
@@ -112,7 +139,16 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def home():
-    return render_template_string(HTML_TEMPLATE, items=items_database)
+    # Read the ?filter= parameter from the website URL address
+    category_filter = request.args.get('filter', 'all')
+    
+    if category_filter in ['Lost', 'Found']:
+        # Filter items list down to just matches
+        filtered_items = [i for i in items_database if i['status'] == category_filter]
+    else:
+        filtered_items = items_database
+        
+    return render_template_string(HTML_TEMPLATE, items=filtered_items, current_filter=category_filter)
 
 @app.route('/add', methods=['POST'])
 def add_item():
@@ -134,7 +170,9 @@ def add_item():
     }
     
     items_database.insert(0, new_post)
-    return redirect('/')
+    
+    # Redirect back to the exact list they just posted to
+    return redirect(f"/?filter={new_post['status']}")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
