@@ -1,10 +1,11 @@
 from flask import Flask, render_template_string, request, redirect
 import os
 import base64
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# The database is now completely empty, ready for live entries!
+# Main storage array
 items_database = []
 
 HTML_TEMPLATE = """
@@ -19,7 +20,6 @@ HTML_TEMPLATE = """
         h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .tagline { text-align: center; color: #666; margin-bottom: 30px; }
         
-        /* Container to place the two forms side-by-side on desktop */
         .forms-container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
         .form-box { flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }
         
@@ -39,9 +39,8 @@ HTML_TEMPLATE = """
         .found-btn { background-color: #2ecc71; }
         .found-btn:hover { background-color: #27ae60; }
         
-        /* Combined Feed Styling */
         .feed-heading { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 40px; color: #2c3e50; }
-        .card { background: white; border: 1px solid #ddd; padding: 20px; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card { background: white; border: 1px solid #ddd; padding: 20px; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
         .card.Lost { border-left: 6px solid #e74c3c; }
         .card.Found { border-left: 6px solid #2ecc71; }
         
@@ -52,14 +51,16 @@ HTML_TEMPLATE = """
         .uploaded-img { max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 12px; display: block; object-fit: contain; }
         .meta-info { margin-top: 10px; font-size: 13px; color: #555; background: #f0f2f5; padding: 8px; border-radius: 4px; line-height: 1.5; }
         .meta-info a { color: #3498db; text-decoration: none; font-weight: bold; }
+        
+        .expiry-notice { position: absolute; top: 20px; right: 20px; font-size: 11px; color: #e67e22; font-weight: bold; background: #fdf2e9; padding: 4px 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
     <h1>🕵️‍♂️ Last and Found</h1>
-    <p class="tagline">Controlled instantly by everyone. Post your item below.</p>
+    <p class="tagline">Notice board updates dynamically. All items automatically delete after 2 days.</p>
     
     <div class="forms-container">
-        <!-- 🔴 Separate Entry for Lost Items -->
+        <!-- 🔴 Lost Item Form -->
         <div class="form-box lost-box">
             <h3 class="lost-title">🔴 Report a Lost Item</h3>
             <form action="/add/Lost" method="POST" enctype="multipart/form-data" style="box-shadow:none; padding:0;">
@@ -82,7 +83,7 @@ HTML_TEMPLATE = """
             </form>
         </div>
 
-        <!-- 🟢 Separate Entry for Found Items -->
+        <!-- 🟢 Found Item Form -->
         <div class="form-box found-box">
             <h3 class="found-title">🟢 Report a Found Item</h3>
             <form action="/add/Found" method="POST" enctype="multipart/form-data" style="box-shadow:none; padding:0;">
@@ -106,15 +107,15 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- 📋 Combined Live Bulletin Feed -->
     <h2 class="feed-heading">📋 Live Bulletins (Lost & Found Combined)</h2>
     
     {% if not items %}
-    <p style="color: #999; font-style: italic; text-align: center; margin-top: 30px;">The notice board is currently empty. Be the first to report an item!</p>
+    <p style="color: #999; font-style: italic; text-align: center; margin-top: 30px;">The notice board is currently empty.</p>
     {% endif %}
 
     {% for item in items %}
     <div class="card {{ item.status }}">
+        <div class="expiry-notice">⏱️ Auto-deletes soon</div>
         <h3>{{ item.title }} <span class="status-badge badge-{{ item.status }}">{{ item.status }}</span></h3>
         <p>{{ item.description }}</p>
         
@@ -124,7 +125,7 @@ HTML_TEMPLATE = """
         
         <div class="meta-info">
             📍 <b>{{ 'Lost Place' if item.status == 'Lost' else 'Found Place' }}:</b> {{ item.place }}<br>
-            📞 <b>Contact Number:</b> <a href="tel:{{ item.contact_number }}">{{ item.contact_number }}</a>
+            📞 <b>Contact Number:</b> [{{ item.contact_number }}](tel:{{ item.contact_number }})
         </div>
     </div>
     {% endfor %}
@@ -132,12 +133,24 @@ HTML_TEMPLATE = """
 </html>
 """
 
+def clean_expired_items():
+    """Removes all items from the shared list that are older than 2 days (48 hours)."""
+    global items_database
+    two_days_ago = datetime.utcnow() - timedelta(days=2)
+    # Re-store only the items posted within the last 48 hours
+    items_database = [item for item in items_database if item['timestamp'] > two_days_ago]
+
 @app.route('/')
 def home():
+    # Run the cleaning check every time someone loads the website feed
+    clean_expired_items()
     return render_template_string(HTML_TEMPLATE, items=items_database)
 
 @app.route('/add/<status_type>', methods=['POST'])
 def add_item(status_type):
+    # Run a clean-up before appending new items
+    clean_expired_items()
+    
     photo_file = request.files.get('item_photo')
     image_base64_url = ""
     
@@ -152,7 +165,8 @@ def add_item(status_type):
         "place": request.form.get('place'),
         "description": request.form.get('desc'),
         "contact_number": request.form.get('contact_number') or "None Provided",
-        "image_data": image_base64_url
+        "image_data": image_base64_url,
+        "timestamp": datetime.utcnow()  # Records the exact creation date/time
     }
     
     items_database.insert(0, new_post)
