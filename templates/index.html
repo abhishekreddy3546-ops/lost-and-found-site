@@ -3,161 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost & Found Community Hub</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #5e35b1; margin: 0; font-size: 2.5rem; }
-        .header p { color: #666; font-size: 1rem; margin: 5px 0 0 0; }
-        
-        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-top: 4px solid #ccc; }
-        .stat-card.total { border-top-color: #5e35b1; }
-        .stat-card.lost { border-top-color: #ef5350; }
-        .stat-card.found { border-top-color: #26a69a; }
-        .stat-card h3 { margin: 0 0 10px 0; color: #666; font-size: 1.1rem; }
-        .stat-card .number { font-size: 2rem; font-weight: bold; color: #222; }
-        
-        .main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .panel { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        
-        .type-selector { display: flex; gap: 15px; margin-bottom: 20px; padding: 10px; background: #fafafa; border-radius: 6px; border: 1px solid #eee; }
-        .type-option { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
-        
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; color: #444; }
-        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; background-color: #fafafa; }
-        textarea { resize: vertical; }
-        
-        .btn-submit { background-color: #ef5350; color: white; border: none; padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; transition: background 0.2s; text-transform: uppercase; }
-        .btn-submit:hover { background-color: #d32f2f; }
-        
-        .feed-header { display: flex; gap: 10px; margin-bottom: 20px; }
-        .feed-header input { flex: 1; }
-        .btn-search { background-color: #5e35b1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        
-        .filter-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
-        .btn-filter { flex: 1; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #666; transition: all 0.2s; }
-        .btn-filter:hover { background: #f0f0f0; }
-        .btn-filter.active { background: #5e35b1; color: white; border-color: #5e35b1; }
-        
-        .feed-container { max-height: 550px; overflow-y: auto; padding-right: 5px; }
-        .item-card { background: #ffffff; padding: 15px; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .item-card img { width: 110px; height: 110px; object-fit: cover; border-radius: 6px; background: #f8f9fa; border: 1px solid #e9ecef; }
-        .item-details { flex: 1; }
-        .item-details h4 { margin: 0 0 8px 0; color: #5e35b1; font-size: 1.25rem; }
-        .item-details p { margin: 4px 0; font-size: 0.9rem; color: #6c757d; }
-        
-        .badge { position: absolute; top: 15px; right: 15px; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
-        .badge.lost { background-color: #ef5350; }
-        .badge.found { background-color: #26a69a; }
-        .notice-text { font-size: 0.8rem; color: #999; text-align: center; margin-top: 5px; }
-        .empty-state { text-align: center; color: #95a5a6; padding: 30px; background: #f8f9fa; border-radius: 6px; border: 1px dashed #dee2e6; }
-    </style>
+    <title>Lost & Found Portal</title>
+    <!-- Tailwind CSS Engine for Quick Styling -->
+    <script src="https://tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans min-h-screen">
 
-    <div class="header">
-        <h1>🔍 Lost & Found Hub</h1>
-        <p>Public Community Registry Platform</p>
-    </div>
+    <!-- Header Navigation -->
+    <nav class="bg-indigo-600 text-white p-4 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">🔍 Lost & Found Portal</h1>
+            <span class="text-sm bg-indigo-700 px-3 py-1 rounded-full border border-indigo-400">Live Status: Active</span>
+        </div>
+    </nav>
 
-    <div class="stats-container">
-        <div class="stat-card total">
-            <h3>Total Active Items</h3>
-            <div class="number">{{ items|length }}</div>
-        </div>
-        <div class="stat-card lost">
-            <h3>Lost Items</h3>
-            <div class="number">{{ lost_count }}</div>
-        </div>
-        <div class="stat-card found">
-            <h3>Found Items</h3>
-            <div class="number">{{ found_count }}</div>
-        </div>
-    </div>
-
-    <div class="main-layout">
-        <!-- LEFT SCREEN: SUBMISSION BOX -->
-        <div class="panel">
-            <h2 id="formTitle" style="margin-top: 0; margin-bottom: 20px; font-size: 1.4rem;">🔴 Report Lost Item</h2>
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Side: Interactive Submission Form -->
+        <div class="bg-white p-6 rounded-lg shadow-md h-fit border border-gray-200">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">📢 Report an Item</h2>
             
-            <div class="type-selector">
-                <label class="type-option">
-                    <input type="radio" name="itemType" value="Lost" checked onchange="toggleFormMode('Lost')"> Lost Item
-                </label>
-                <label class="type-option">
-                    <input type="radio" name="itemType" value="Found" onchange="toggleFormMode('Found')"> Found Item
-                </label>
-            </div>
+            <!-- Flask Message Flashing Alert Prompts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="mb-4 p-3 rounded text-sm text-white bg-{% if category == 'danger' %}red{% else %}green{% endif %}-500">
+                      {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
 
-            <form action="/report-lost" method="POST" enctype="multipart/form-data">
-                <input type="hidden" id="statusField" name="status" value="Lost">
-
-                <div class="form-group">
-                    <label for="itemName">Item Name</label>
-                    <input type="text" id="itemName" name="itemName" required>
+            <form action="/report" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Title</label>
+                    <input type="text" name="title" required placeholder="e.g., iPhone 15 Pro, Gold Keys" class="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
-                <div class="form-group">
-                    <label for="category">Category</label>
-                    <select id="category" name="category">
-                        <option value="Electronics">Electronics</option>
-                        <option value="Documents">Documents/IDs</option>
-                        <option value="Clothing">Clothing</option>
-                        <option value="Keys">Keys</option>
-                        <option value="Other">Other</option>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Type</label>
+                    <select name="status" required class="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        <option value="Lost">I Lost This Item</option>
+                        <option value="Found">I Found This Item</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="image">Add Photo Asset</label>
-                    <input type="file" id="image" name="image" accept="image/*">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location Details</label>
+                    <input type="text" name="location" required placeholder="e.g., Central Park Bench, Library Room 2" class="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
-                <div class="form-group">
-                    <label id="locationLabel" for="location">Location Lost</label>
-                    <input type="text" id="location" name="location">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Incident (Optional)</label>
+                    <input type="text" name="date_event" placeholder="e.g., September 18, 2026" class="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
-                <div class="form-group">
-                    <label id="dateLabel" for="date">Date Lost</label>
-                    <input type="date" id="date" name="date">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Description</label>
+                    <textarea name="description" rows="3" required placeholder="Provide distinguishing markings, color, size, etc." class="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="contact">Your Contact Info</label>
-                    <input type="text" id="contact" name="contact" placeholder="Phone or Email" required>
-                </div>
-                <div class="form-group">
-                    <label for="description">Item Description / Details</label>
-                    <textarea id="description" name="description" rows="3" required></textarea>
-                </div>
-                <button type="submit" id="submitBtn" class="btn-submit">Submit Lost Item</button>
-                <p class="notice-text">⚠️ Note: Submissions automatically expire and delete after exactly 7 days.</p>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded shadow transition-all duration-150">Submit Report</button>
             </form>
         </div>
 
-        <!-- RIGHT SCREEN: DYNAMIC SPLIT FEED -->
-        <div class="panel">
-            <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 1.4rem;">📋 Reported Items Feed</h2>
-            <div class="feed-header">
-                <input type="text" id="searchInput" placeholder="Search entries...">
-                <button class="btn-search" onclick="searchItems()">Search</button>
-            </div>
-            <div class="filter-buttons">
-                <button class="btn-filter active" id="filter-all" onclick="filterItems('all')">All Items</button>
-                <button class="btn-filter" id="filter-lost" onclick="filterItems('lost')">Lost Only</button>
-                <button class="btn-filter" id="filter-found" onclick="filterItems('found')">Found Only</button>
-            </div>
+        <!-- Right Side: Realtime Database Item Feed Grid Layout -->
+        <div class="lg:col-span-2 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">📋 Live Listings Dashboard</h2>
             
-            <div class="feed-container">
-                {% if items %}
+            {% if not items %}
+                <div class="bg-white p-8 rounded-lg shadow border border-gray-200 text-center text-gray-500">
+                    No items reported yet. Be the first to add a log entry!
+                </div>
+            {% else %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- TARGET START LOOP TAG -->
                     {% for item in items %}
-                        <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
-                            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
-                            {% if item.image_url %}
-                                <img src="{{ item.image_url }}" alt="Item image">
-                            {% else %}
-                                <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border:1px solid #e9ecef;">No Photo</div>
-                            {% endif %}
-                            <div class="item-details">
-                                <h4>{{ item.name }}</h4>
-                                <p><strong>Category:</strong> {{ item.category }}</p>
-                                <p><strong>Location:</strong> {{ item.location or 'Not provided' }}</p>
-                                <p><strong>Date:</strong> {{ item.date_event or 'Not provided' }}</p>
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs uppercase font-extrabold px-2.5 py-0.5 rounded-full {% if item.status == 'Lost' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ item.status }}
+                                </span>
+                                <span class="text-xs text-gray-400 font-mono">ID: #{{ item.id }}</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">{{ item.title }}</h3>
+                            <p class="text-sm text-gray-600 mb-3 line-clamp-3">{{ item.description }}</p>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 border-t text-xs text-gray-600 space-y-1">
+                            <p><strong>📍 Location:</strong> {{ item.location }}</p>
+                            <p><strong>📅 Date:</strong> {{ item.date_event }}</p>
+                        </div>
+                    </div>
+                    <!-- TARGET END LOOP TAG (Fixes Jinja2 Crash Context) -->
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+</body>
+</html>
