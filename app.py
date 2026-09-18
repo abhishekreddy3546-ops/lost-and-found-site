@@ -17,10 +17,7 @@ cloudinary.config(
 
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({
-        "status": "online", 
-        "message": "Lost and Found Backend Server is running successfully!"
-    }), 200
+    return render_template('index.html')
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
