@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_react_template, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -32,7 +32,6 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # Pull items ordered by the newest submissions first
     items = LostFoundItem.query.order_by(LostFoundItem.created_at.desc()).all()
     return render_template('index.html', items=items)
 
