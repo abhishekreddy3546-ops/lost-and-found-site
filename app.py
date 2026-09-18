@@ -2,8 +2,6 @@ import os
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-import cloudinary
-import cloudinary.uploader
 
 app = Flask(__name__)
 
@@ -11,15 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-cloudinary.config(
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key = os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
-    secure = True
-)
-
-class FinalHubItem(db.Model):
-    __tablename__ = 'final_hub_items'
+class PublicItem(db.Model):
+    __tablename__ = 'public_items'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50))
@@ -31,35 +22,32 @@ class FinalHubItem(db.Model):
     status = db.Column(db.String(20), default='Lost')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Safely force table creation at startup without infinite loops
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception:
+        db.session.rollback()
 
 def clean_expired_items():
-    """Background helper to automatically delete entries older than 7 days"""
+    """Removes entries older than 7 days"""
     try:
         one_week_ago = datetime.utcnow() - timedelta(days=7)
-        expired_items = FinalHubItem.query.filter(FinalHubItem.created_at < one_week_ago).all()
+        expired_items = PublicItem.query.filter(PublicItem.created_at < one_week_ago).all()
         for item in expired_items:
             db.session.delete(item)
         if expired_items:
             db.session.commit()
-    except Exception as e:
+    except Exception:
         db.session.rollback()
 
 @app.route('/', methods=['GET'])
 def home():
-    try:
-        clean_expired_items()
-        items = FinalHubItem.query.order_by(FinalHubItem.id.desc()).all()
-        lost_count = FinalHubItem.query.filter_by(status='Lost').count()
-        found_count = FinalHubItem.query.filter_by(status='Found').count()
-        return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
-    except Exception as e:
-        # Self-healing fallback if database gets structurally out of sync
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-        return redirect(url_for('home'))
+    clean_expired_items()
+    items = PublicItem.query.order_by(PublicItem.id.desc()).all()
+    lost_count = PublicItem.query.filter_by(status='Lost').count()
+    found_count = PublicItem.query.filter_by(status='Found').count()
+    return render_template('index.html', items=items, lost_count=lost_count, found_count=found_count)
 
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
@@ -72,14 +60,26 @@ def report_lost():
         contact = request.form.get('contact')
         status = request.form.get('status', 'Lost')
         
-        image_file = request.files.get('image')
         image_url = None
-        
-        if image_file and image_file.filename != '':
-            upload_result = cloudinary.uploader.upload(image_file)
-            image_url = upload_result.get('secure_url')
-        
-        new_item = FinalHubItem(
+        # Handle file uploads through Cloudinary if environment keys exist
+        if 'image' in request.files:
+            image_file = request.files.get('image')
+            if image_file and image_file.filename != '':
+                try:
+                    import cloudinary
+                    import cloudinary.uploader
+                    cloudinary.config(
+                        cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+                        api_key = os.environ.get('CLOUDINARY_API_KEY'),
+                        api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
+                        secure = True
+                    )
+                    upload_result = cloudinary.uploader.upload(image_file)
+                    image_url = upload_result.get('secure_url')
+                except Exception:
+                    pass
+
+        new_item = PublicItem(
             name=item_name,
             category=category,
             description=description,
