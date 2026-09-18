@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 import cloudinary
 import cloudinary.uploader
 
@@ -23,7 +23,11 @@ def home():
 def report_lost():
     try:
         item_name = request.form.get('itemName')
+        category = request.form.get('category')
         description = request.form.get('description')
+        location = request.form.get('location')
+        date = request.form.get('date')
+        contact = request.form.get('contact')
         
         image_file = request.files.get('image')
         image_url = None
@@ -32,11 +36,7 @@ def report_lost():
             upload_result = cloudinary.uploader.upload(image_file)
             image_url = upload_result.get('secure_url')
         
-        return jsonify({
-            "status": "success",
-            "message": "Item reported successfully!", 
-            "imageUrl": image_url
-        }), 201
+        return redirect(url_for('home'))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
