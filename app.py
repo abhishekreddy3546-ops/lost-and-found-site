@@ -15,7 +15,13 @@ cloudinary.config(
     secure = True
 )
 
-# 3. ROUTES (Must go AFTER initializing 'app')
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "online", 
+        "message": "Lost and Found Backend Server is running successfully!"
+    }), 200
+
 @app.route('/report-lost', methods=['POST'])
 def report_lost():
     try:
@@ -28,9 +34,12 @@ def report_lost():
         if image_file:
             upload_result = cloudinary.uploader.upload(image_file)
             image_url = upload_result.get('secure_url')
-
-         
-        return jsonify({"message": "Item reported successfully!", "imageUrl": image_url}), 201
+        
+        return jsonify({
+            "status": "success",
+            "message": "Item reported successfully!", 
+            "imageUrl": image_url
+        }), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
