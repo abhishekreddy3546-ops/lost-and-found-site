@@ -54,15 +54,15 @@
     <div class="stats-container">
         <div class="stat-card total">
             <h3>Total Database Records</h3>
-            <div class="number">{{ total_count }}</div>
+            <div id="statTotal" class="number">0</div>
         </div>
         <div class="stat-card lost">
             <h3>Active Lost Reports</h3>
-            <div class="number">{{ lost_count }}</div>
+            <div id="statLost" class="number">0</div>
         </div>
         <div class="stat-card found">
             <h3>Recovered Found Items</h3>
-            <div class="number">{{ found_count }}</div>
+            <div id="statFound" class="number">0</div>
         </div>
     </div>
 
@@ -129,28 +129,41 @@
                 <button class="btn-search" onclick="searchItems()">Search</button>
             </div>
             <div class="filter-buttons">
-                <button class="btn-filter active" id="filter-all" onclick="filterItems('all')">All Reports</button>
-                <button class="btn-filter" id="filter-lost" onclick="filterItems('lost')">Lost Only</button>
-                <button class="btn-filter" id="filter-found" onclick="filterItems('found')">Found Only</button>
+                <button class="btn-filter active" id="btn-all" onclick="filterItems('all')">All Reports</button>
+                <button class="btn-filter" id="btn-lost" onclick="filterItems('lost')">Lost Only</button>
+                <button class="btn-filter" id="btn-found" onclick="filterItems('found') text-align: center'")">Found Only</button>
             </div>
             
-            <div class="items-list">
-                {% if items %}
-                    {% for item in items %}
-                        <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
-                            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
-                            {% if item.image_url %}
-                                <img src="{{ item.image_url }}" alt="Uploaded item image">
-                            {% else %}
-                                <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border: 1px solid #e9ecef;">No Image</div>
-                            {% endif %}
-                            <div class="item-details">
-                                <h4>{{ item.name }}</h4>
-                                <p><strong>Category:</strong> {{ item.category }}</p>
-                                <p><strong>Location:</strong> {{ item.location }}</p>
-                                <p><strong>Date:</strong> {{ item.date }}</p>
-                                <p><strong>Contact:</strong> <a href="tel:{{ item.contact }}">{{ item.contact }}</a></p>
-                                <p><strong>Description:</strong> {{ item.description }}</p>
-                            </div>
-                        </div>
-                    {% endfor %}
+            <div class="items-list" id="feedContainer">
+                <!-- Javascript will load items safely here -->
+            </div>
+            <div class="empty-state" id="filterEmptyText" style="display: none;">No items match your criteria.</div>
+        </div>
+    </div>
+
+    <script>
+        let globalItems = [];
+        let activeFilter = 'all';
+
+        function toggleFormType(type) {
+            const submitBtn = document.getElementById('submitBtn');
+            const locationLabel = document.getElementById('locationLabel');
+            const dateLabel = document.getElementById('dateLabel');
+            const statusField = document.getElementById('statusField');
+            statusField.value = type;
+
+            if (type === 'Lost') {
+                submitBtn.innerText = 'Submit Lost Report';
+                submitBtn.style.backgroundColor = '#e74c3c';
+                locationLabel.innerText = 'Location Where Lost';
+                dateLabel.innerText = 'Date When Lost';
+                document.getElementById('location').placeholder = 'e.g., Central Park Coffee Shop';
+            } else {
+                submitBtn.innerText = 'Submit Found Report';
+                submitBtn.style.backgroundColor = '#2ecc71';
+                locationLabel.innerText = 'Location Where Found';
+                dateLabel.innerText = 'Date When Found';
+                document.getElementById('location').placeholder = 'e.g., Library Second Floor';
+            }
+        }
+
