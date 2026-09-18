@@ -18,13 +18,11 @@
         .stat-card h3 { margin: 0 0 10px 0; color: #7f8c8d; font-size: 1.1rem; }
         .stat-card .number { font-size: 2rem; font-weight: bold; color: #2c3e50; }
         
-        /* New Top-to-Bottom Layout structure */
         .section-block { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 40px; }
         .section-block.lost-section { border-left: 6px solid #e74c3c; }
         .section-block.found-section { border-left: 6px solid #2ecc71; }
         
         .section-title { margin-top: 0; margin-bottom: 20px; font-size: 1.6rem; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
-        
         .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         
         .form-group { margin-bottom: 15px; }
@@ -55,7 +53,6 @@
         <p>Global Community Registry Platform</p>
     </div>
 
-    <!-- Stats summary display metrics -->
     <div class="stats-container">
         <div class="stat-card total">
             <h3>Total Registered Records</h3>
@@ -76,7 +73,7 @@
         <div class="section-title">🔴 Lost Items Panel</div>
         <div class="split-grid">
             <div>
-                <form action="/report-lost" method="POST" enctype="multipart/form-data">
+                <form id="lostForm">
                     <input type="hidden" name="status" value="Lost">
                     <div class="form-group">
                         <label>Item Name</label>
@@ -116,10 +113,8 @@
                 </form>
             </div>
             <div>
-                <label style="margin-bottom: 10px;">📋 Live Lost Feed</label>
-                <div class="feed-container" id="lostFeed">
-                    <!-- Lost Items script placement -->
-                </div>
+                <label style="margin-bottom: 10px; font-weight: bold; display: block;">📋 Live Lost Feed</label>
+                <div class="feed-container" id="lostFeed"></div>
             </div>
         </div>
     </div>
@@ -129,7 +124,7 @@
         <div class="section-title">🟢 Found Items Panel</div>
         <div class="split-grid">
             <div>
-                <form action="/report-lost" method="POST" enctype="multipart/form-data">
+                <form id="foundForm">
                     <input type="hidden" name="status" value="Found">
                     <div class="form-group">
                         <label>Item Name</label>
@@ -169,10 +164,8 @@
                 </form>
             </div>
             <div>
-                <label style="margin-bottom: 10px;">📋 Live Found Feed</label>
-                <div class="feed-container" id="foundFeed">
-                    <!-- Found Items script placement -->
-                </div>
+                <label style="margin-bottom: 10px; font-weight: bold; display: block;">📋 Live Found Feed</label>
+                <div class="feed-container" id="foundFeed"></div>
             </div>
         </div>
     </div>
@@ -188,3 +181,11 @@
                 document.getElementById('statFound').innerText = data.found_count || 0;
                 
                 const lostFeed = document.getElementById('lostFeed');
+                const foundFeed = document.getElementById('foundFeed');
+                
+                lostFeed.innerHTML = '';
+                foundFeed.innerHTML = '';
+                
+                let lostCount = 0;
+                let foundCount = 0;
+                
