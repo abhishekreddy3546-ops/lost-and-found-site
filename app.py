@@ -1,29 +1,40 @@
-@app.route('/report-lost', methods=['POST'])
-def submit_lost():
-    new_item = TrackedItem(
-        name=request.form.get('lostName'),
-        category=request.form.get('lostCategory'),
-        status='lost',
-        description=request.form.get('lostDesc'),
-        location=request.form.get('lostLoc'),
-        date=request.form.get('lostDate'),
-        contact=request.form.get('lostContact')
-    )
-    db.session.add(new_item)
-    db.session.commit()
-    return redirect(url_for('index'))
+import os
+from flask import Flask, request, jsonify, render_template
+import cloudinary
+import cloudinary.uploader
 
-@app.route('/report-found', methods=['POST'])
-def submit_found():
-    new_item = TrackedItem(
-        name=request.form.get('foundName'),
-        category=request.form.get('foundCategory'),
-        status='found',
-        description=request.form.get('foundDesc'),
-        location=request.form.get('foundLoc'),
-        date=request.form.get('foundDate'),
-        contact=request.form.get('foundContact')
-    )
-    db.session.add(new_item)
-    db.session.commit()
-    return redirect(url_for('index'))
+app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key = os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
+    secure = True
+)
+
+# 3. ROUTES (Must go AFTER initializing 'app')
+@app.route('/report-lost', methods=['POST'])
+def report_lost():
+    try:
+        item_name = request.form.get('itemName')
+        description = request.form.get('description')
+        
+        image_file = request.files.get('image')
+        image_url = None
+        
+        if image_file:
+            upload_result = cloudinary.uploader.upload(image_file)
+            image_url = upload_result.get('secure_url')
+
+         
+        return jsonify({"message": "Item reported successfully!", "imageUrl": image_url}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
