@@ -91,14 +91,18 @@
                 </label>
             </div>
 
-            <form id="itemForm">
+            <!-- Standard Form Submission Method - Faster and 100% Reliable -->
+            <form action="/report-lost" method="POST" enctype="multipart/form-data">
+                <!-- Secret status holder -->
+                <input type="hidden" id="statusField" name="status" value="Lost">
+
                 <div class="form-group">
                     <label for="itemName">Item Name</label>
-                    <input type="text" id="itemName" placeholder="e.g., iPhone 13, Leather Wallet" required>
+                    <input type="text" id="itemName" name="itemName" placeholder="e.g., iPhone 13, Leather Wallet" required>
                 </div>
                 <div class="form-group">
                     <label for="category">Category</label>
-                    <select id="category">
+                    <select id="category" name="category">
                         <option value="Electronics">Electronics</option>
                         <option value="Documents">Documents / IDs</option>
                         <option value="Clothing">Clothing & Bags</option>
@@ -108,23 +112,23 @@
                 </div>
                 <div class="form-group">
                     <label for="image">Upload Reference Image</label>
-                    <input type="file" id="image" accept="image/*">
+                    <input type="file" id="image" name="image" accept="image/*">
                 </div>
                 <div class="form-group">
                     <label id="locationLabel" for="location">Location Where Lost</label>
-                    <input type="text" id="location" placeholder="e.g., Central Park Coffee Shop">
+                    <input type="text" id="location" name="location" placeholder="e.g., Central Park Coffee Shop">
                 </div>
                 <div class="form-group">
                     <label id="dateLabel" for="date">Date When Lost</label>
-                    <input type="date" id="date">
+                    <input type="date" id="date" name="date">
                 </div>
                 <div class="form-group">
                     <label for="contact">Your Contact Information</label>
-                    <input type="text" id="contact" placeholder="Email address or Phone number" required>
+                    <input type="text" id="contact" name="contact" placeholder="Email address or Phone number" required>
                 </div>
                 <div class="form-group">
                     <label for="description">Additional Details / Description</label>
-                    <textarea id="description" rows="3" placeholder="Provide distinct characteristics..." required></textarea>
+                    <textarea id="description" name="description" rows="3" placeholder="Provide distinct characteristics..." required></textarea>
                 </div>
                 <button type="submit" id="submitBtn" class="btn-submit">Submit Lost Report</button>
             </form>
@@ -143,31 +147,18 @@
             </div>
             
             <div class="items-list">
-                {% for item in items %}
-                    <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
-                        <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
-                        {% if item.image_url %}
-                            <img src="{{ item.image_url }}" alt="Uploaded item image">
-                        {% else %}
-                            <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border: 1px solid #e9ecef;">No Image</div>
-                        {% endif %}
-                        <div class="item-details">
-                            <h4>{{ item.name }}</h4>
-                            <p><strong>Category:</strong> {{ item.category }}</p>
-                            <p><strong>Location:</strong> {{ item.location }}</p>
-                            <p><strong>Date:</strong> {{ item.date }}</p>
-                            <p><strong>Contact:</strong> {{ item.contact }}</p>
-                            <p><strong>Description:</strong> {{ item.description }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-                <div class="empty-state" id="filterEmptyText" style="display: none;">No items match your criteria.</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentType = 'Lost';
-
-        function toggleFormType(type) {
-            currentType = type;
+                {% if items %}
+                    {% for item in items %}
+                        <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
+                            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="Uploaded item image">
+                            {% else %}
+                                <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border: 1px solid #e9ecef;">No Image</div>
+                            {% endif %}
+                            <div class="item-details">
+                                <h4>{{ item.name }}</h4>
+                                <p><strong>Category:</strong> {{ item.category }}</p>
+                                <p><strong>Location:</strong> {{ item.location }}</p>
+                                <p><strong>Date:</strong> {{ item.date }}</p>
+                                <p><strong>Contact:</strong> {{ item.contact }}</p>
