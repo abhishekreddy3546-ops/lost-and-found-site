@@ -28,8 +28,7 @@
         
         .form-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; color: #495057; }
-        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; background-color: #ffffff; transition: border-color 0.2s; }
-        input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus { border-color: #2980b9; outline: none; }
+        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; background-color: #ffffff; }
         input[type="file"] { padding: 5px 0; }
         textarea { resize: vertical; }
         
@@ -39,21 +38,18 @@
         .feed-header { display: flex; gap: 10px; margin-bottom: 20px; }
         .feed-header input { flex: 1; }
         .btn-search { background-color: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn-search:hover { background-color: #1a252f; }
         
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
-        .btn-filter { flex: 1; padding: 8px; background: #fff; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer; font-weight: 600; color: #6c757d; transition: all 0.2s; }
-        .btn-filter:hover { background: #f8f9fa; border-color: #adb5bd; }
+        .btn-filter { flex: 1; padding: 8px; background: #fff; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer; font-weight: 600; color: #6c757d; }
         .btn-filter.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         
-        .item-card { background: #ffffff; padding: 15px; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .item-card { background: #ffffff; padding: 15px; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; position: relative; }
         .item-card img { width: 110px; height: 110px; object-fit: cover; border-radius: 6px; background: #f8f9fa; border: 1px solid #e9ecef; }
         .item-details { flex: 1; }
         .item-details h4 { margin: 0 0 8px 0; color: #2c3e50; font-size: 1.25rem; }
         .item-details p { margin: 4px 0; font-size: 0.9rem; color: #6c757d; }
-        .item-details p strong { color: #495057; }
         
-        .badge { position: absolute; top: 15px; right: 15px; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge { position: absolute; top: 15px; right: 15px; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
         .badge.lost { background-color: #e74c3c; }
         .badge.found { background-color: #2ecc71; }
         
@@ -162,3 +158,10 @@
                                 <h4>{{ item.name }}</h4>
                                 <p><strong>Category:</strong> {{ item.category }}</p>
                                 <p><strong>Location:</strong> {{ item.location }}</p>
+                                <p><strong>Date:</strong> {{ item.date }}</p>
+                                <p><strong>Contact:</strong> {{ item.contact }}</p>
+                                <p><strong>Description:</strong> {{ item.description }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
