@@ -135,22 +135,22 @@
             </div>
             
             <div class="items-list">
-                {% for item in items %}
-                    <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
-                        <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
-                        {% if item.image_url %}
-                            <img src="{{ item.image_url }}" alt="Uploaded item image">
-                        {% else %}
-                            <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border: 1px solid #e9ecef;">No Image</div>
-                        {% endif %}
-                        <div class="item-details">
-                            <h4>{{ item.name }}</h4>
-                            <p><strong>Category:</strong> {{ item.category }}</p>
-                            <p><strong>Location:</strong> {{ item.location }}</p>
-                            <p><strong>Date:</strong> {{ item.date }}</p>
-                            <p><strong>Contact:</strong> [{{ item.contact }}](tel:{{ item.contact }})</p>
-                            <p><strong>Description:</strong> {{ item.description }}</p>
+                {% if items %}
+                    {% for item in items %}
+                        <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
+                            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="Uploaded item image">
+                            {% else %}
+                                <div style="width:110px; height:110px; background:#f8f9fa; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#adb5bd; font-size:0.8rem; border: 1px solid #e9ecef;">No Image</div>
+                            {% endif %}
+                            <div class="item-details">
+                                <h4>{{ item.name }}</h4>
+                                <p><strong>Category:</strong> {{ item.category }}</p>
+                                <p><strong>Location:</strong> {{ item.location }}</p>
+                                <p><strong>Date:</strong> {{ item.date }}</p>
+                                <p><strong>Contact:</strong> <a href="tel:{{ item.contact }}">{{ item.contact }}</a></p>
+                                <p><strong>Description:</strong> {{ item.description }}</p>
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
-                <div class="empty-state" id="filterEmptyText" style="display: none;">No items match your criteria.</div>
+                    {% endfor %}
