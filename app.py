@@ -4,13 +4,14 @@ import base64
 
 app = Flask(__name__)
 
-# This database holds the posts in the server's memory
+# Updated database columns to store contact information and location data properly
 items_database = [
     {
-        "title": "Example Wallet", 
-        "status": "Found", 
-        "description": "Found a brown leather wallet near the bus stop.", 
-        "reported_by": "System",
+        "title": "Sample Golden Ring", 
+        "status": "Lost", 
+        "description": "Gold band with a small gemstone inscription.", 
+        "contact_number": "+1234567890",
+        "place": "Central Station Food Court",
         "image_data": ""
     }
 ]
@@ -37,31 +38,37 @@ HTML_TEMPLATE = """
         .badge-Lost { background-color: #e74c3c; }
         .badge-Found { background-color: #2ecc71; }
         .uploaded-img { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 12px; display: block; object-fit: contain; }
+        .meta-info { margin-top: 10px; font-size: 13px; color: #555; background: #f0f2f5; padding: 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
     <h1>🕵️‍♂️ Last and Found</h1>
     <p style="text-align: center; color: #666;">A live notice board controlled instantly by everyone.</p>
     
-    <!-- Using multipart/form-data to allow real image uploading -->
     <form action="/add" method="POST" enctype="multipart/form-data">
         <label><b>Item Name</b></label>
         <input type="text" name="title" placeholder="What did you lose or find?" required>
         
         <label><b>Status</b></label>
-        <select name="status">
+        <!-- Added id="statusSelect" to trace choices with JavaScript -->
+        <select name="status" id="statusSelect" onchange="updateLocationLabel()">
             <option value="Lost">Lost</option>
             <option value="Found">Found</option>
         </select>
         
+        <!-- The label text changes dynamically via the JavaScript code down below -->
+        <label><b id="locationLabel">Lost Place</b></label>
+        <input type="text" name="place" id="placeInput" placeholder="Where did it happen?" required>
+
         <label><b>Description</b></label>
-        <textarea name="desc" placeholder="Provide details (Location, color, contact info...)" required></textarea>
+        <textarea name="desc" placeholder="Provide extra details (Color, shape, distinctive markers...)" required></textarea>
         
         <label><b>Upload a Photo of the Item (Optional)</b></label>
         <input type="file" name="item_photo" accept="image/*">
         
-        <label><b>Your Name</b></label>
-        <input type="text" name="reported_by" placeholder="Anonymous">
+        <!-- Replaced Name label with Contact Number layout -->
+        <label><b>Contact Number</b></label>
+        <input type="tel" name="contact_number" placeholder="Enter phone number to reach you" required>
         
         <button type="submit">Post to Live Board</button>
     </form>
@@ -72,15 +79,33 @@ HTML_TEMPLATE = """
         <h3>{{ item.title }} <span class="status-badge badge-{{ item.status }}">{{ item.status }}</span></h3>
         <p>{{ item.description }}</p>
         
-        <!-- Displays the uploaded photo if one exists -->
         {% if item.image_data %}
         <img class="uploaded-img" src="{{ item.image_data }}" alt="Uploaded item photo">
         {% endif %}
         
-        <br>
-        <small style="color: #7f8c8d;">Reported by: {{ item.reported_by }}</small>
+        <div class="meta-info">
+            📍 <b>📍 Location:</b> {{ item.place }}<br>
+            📞 <b>📞 Contact Number:</b> <a href="tel:{{ item.contact_number }}">{{ item.contact_number }}</a>
+        </div>
     </div>
     {% endfor %}
+
+    <!-- JavaScript script handles swapping labels on the fly without page reloads -->
+    <script>
+    function updateLocationLabel() {
+        var status = document.getElementById("statusSelect").value;
+        var label = document.getElementById("locationLabel");
+        var input = document.getElementById("placeInput");
+        
+        if (status === "Lost") {
+            label.innerHTML = "Lost Place";
+            input.placeholder = "Where was it lost?";
+        } else {
+            label.innerHTML = "Found Place";
+            input.placeholder = "Where was it found?";
+        }
+    }
+    </script>
 </body>
 </html>
 """
@@ -94,7 +119,6 @@ def add_item():
     photo_file = request.files.get('item_photo')
     image_base64_url = ""
     
-    # Process the uploaded image file and convert it into a string to store it safely
     if photo_file and photo_file.filename != '':
         file_bytes = photo_file.read()
         encoded_string = base64.b64encode(file_bytes).decode('utf-8')
@@ -103,8 +127,9 @@ def add_item():
     new_post = {
         "title": request.form.get('title'),
         "status": request.form.get('status'),
+        "place": request.form.get('place'),
         "description": request.form.get('desc'),
-        "reported_by": request.form.get('reported_by') or "Anonymous",
+        "contact_number": request.form.get('contact_number') or "None Provided",
         "image_data": image_base64_url
     }
     
