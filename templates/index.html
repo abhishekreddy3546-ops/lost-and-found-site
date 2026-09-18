@@ -32,6 +32,10 @@
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
         .btn-filter { flex: 1; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #666; transition: all 0.2s; }
         .btn-filter:hover { background: #f0f0f0; }
+        .item-card { background: #f9f9f9; padding: 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; }
+        .item-card img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; background: #eee; }
+        .item-details h4 { margin: 0 0 5px 0; color: #5e35b1; font-size: 1.2rem; }
+        .item-details p { margin: 3px 0; font-size: 0.9rem; color: #555; }
         .empty-state { text-align: center; color: #888; margin-top: 40px; font-size: 1.05rem; }
     </style>
 </head>
@@ -45,11 +49,11 @@
     <div class="stats-container">
         <div class="stat-card total">
             <h3>Total Items</h3>
-            <div class="number">0</div>
+            <div class="number">{{ items|length }}</div>
         </div>
         <div class="stat-card lost">
             <h3>Lost Items</h3>
-            <div class="number">0</div>
+            <div class="number">{{ items|length }}</div>
         </div>
         <div class="stat-card found">
             <h3>Found Items</h3>
@@ -60,14 +64,14 @@
     <div class="main-layout">
         <div class="panel">
             <h2>🔴 Report Lost Item</h2>
-            <form action="/report-lost" method="POST" enctype="multipart/form-data">
+            <form id="lostForm">
                 <div class="form-group">
                     <label for="itemName">Item Name</label>
-                    <input type="text" id="itemName" name="itemName" required>
+                    <input type="text" id="itemName" required>
                 </div>
                 <div class="form-group">
                     <label for="category">Category</label>
-                    <select id="category" name="category">
+                    <select id="category">
                         <option value="Electronics">Electronics</option>
                         <option value="Documents">Documents/IDs</option>
                         <option value="Clothing">Clothing</option>
@@ -77,23 +81,23 @@
                 </div>
                 <div class="form-group">
                     <label for="image">Add Photo</label>
-                    <input type="file" id="image" name="image" accept="image/*">
+                    <input type="file" id="image" accept="image/*">
                 </div>
                 <div class="form-group">
                     <label for="location">Location Lost</label>
-                    <input type="text" id="location" name="location">
+                    <input type="text" id="location">
                 </div>
                 <div class="form-group">
                     <label for="date">Date Lost</label>
-                    <input type="date" id="date" name="date">
+                    <input type="date" id="date">
                 </div>
                 <div class="form-group">
                     <label for="contact">Contact Info</label>
-                    <input type="text" id="contact" name="contact">
+                    <input type="text" id="contact">
                 </div>
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <textarea id="description" name="description" rows="3" required></textarea>
+                    <textarea id="description" rows="3" required></textarea>
                 </div>
                 <button type="submit" class="btn-submit">Submit Lost Item</button>
             </form>
@@ -110,11 +114,77 @@
                 <button class="btn-filter">Lost Only</button>
                 <button class="btn-filter">Found Only</button>
             </div>
-            <div class="empty-state">
-                No items match your criteria.
+            
+            <div class="items-list">
+                {% if items %}
+                    {% for item in items %}
+                        <div class="item-card">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="Item image">
+                            {% else %}
+                                <div style="width:100px; height:100px; background:#ddd; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#777; font-size:0.8rem;">No Photo</div>
+                            {% endif %}
+                            <div class="item-details">
+                                <h4>{{ item.name }}</h4>
+                                <p><strong>Category:</strong> {{ item.category }}</p>
+                                <p><strong>Location:</strong> {{ item.location }}</p>
+                                <p><strong>Date:</strong> {{ item.date }}</p>
+                                <p><strong>Contact:</strong> {{ item.contact }}</p>
+                                <p><strong>Description:</strong> {{ item.description }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">No items match your criteria.</div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('lostForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.btn-submit');
+            submitBtn.innerText = 'Uploading item...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('itemName', document.getElementById('itemName').value);
+            formData.append('category', document.getElementById('category').value);
+            formData.append('location', document.getElementById('location').value);
+            formData.append('date', document.getElementById('date').value);
+            formData.append('contact', document.getElementById('contact').value);
+            formData.append('description', document.getElementById('description').value);
+            
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            try {
+                const response = await fetch('/report-lost', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    const result = await response.json();
+                    if (result.error) {
+                        alert("Error: " + result.error);
+                        submitBtn.innerText = 'Submit Lost Item';
+                        submitBtn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                alert("Network error occurred.");
+                submitBtn.innerText = 'Submit Lost Item';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
 
 </body>
 </html>
