@@ -32,11 +32,16 @@
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
         .btn-filter { flex: 1; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #666; transition: all 0.2s; }
         .btn-filter:hover { background: #f0f0f0; }
-        .item-card { background: #f9f9f9; padding: 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; }
+        .item-card { background: #f9f9f9; padding: 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px; display: flex; gap: 15px; position: relative; }
         .item-card img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; background: #eee; }
         .item-details h4 { margin: 0 0 5px 0; color: #5e35b1; font-size: 1.2rem; }
         .item-details p { margin: 3px 0; font-size: 0.9rem; color: #555; }
+        .badge { position: absolute; top: 15px; right: 15px; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: white; }
+        .badge.lost { background-color: #ef5350; }
+        .badge.found { background-color: #26a69a; }
         .empty-state { text-align: center; color: #888; margin-top: 40px; font-size: 1.05rem; }
+        .type-selector { display: flex; gap: 15px; margin-bottom: 15px; }
+        .type-option { display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -53,18 +58,28 @@
         </div>
         <div class="stat-card lost">
             <h3>Lost Items</h3>
-            <div class="number">{{ items|length }}</div>
+            <div class="number">{{ lost_count }}</div>
         </div>
         <div class="stat-card found">
             <h3>Found Items</h3>
-            <div class="number">0</div>
+            <div class="number">{{ found_count }}</div>
         </div>
     </div>
 
     <div class="main-layout">
         <div class="panel">
-            <h2>🔴 Report Lost Item</h2>
-            <form id="lostForm">
+            <h2 id="formTitle">🔴 Report Lost Item</h2>
+            
+            <div class="type-selector">
+                <label class="type-option">
+                    <input type="radio" name="itemType" value="Lost" checked onchange="toggleFormType('Lost')"> Lost Item
+                </label>
+                <label class="type-option">
+                    <input type="radio" name="itemType" value="Found" onchange="toggleFormType('Found')"> Found Item
+                </label>
+            </div>
+
+            <form id="itemForm">
                 <div class="form-group">
                     <label for="itemName">Item Name</label>
                     <input type="text" id="itemName" required>
@@ -84,41 +99,42 @@
                     <input type="file" id="image" accept="image/*">
                 </div>
                 <div class="form-group">
-                    <label for="location">Location Lost</label>
+                    <label id="locationLabel" for="location">Location Lost</label>
                     <input type="text" id="location">
                 </div>
                 <div class="form-group">
-                    <label for="date">Date Lost</label>
+                    <label id="dateLabel" for="date">Date Lost</label>
                     <input type="date" id="date">
                 </div>
                 <div class="form-group">
                     <label for="contact">Contact Info</label>
-                    <input type="text" id="contact">
+                    <input type="text" id="contact" required>
                 </div>
                 <div class="form-group">
                     <label for="description">Description</label>
                     <textarea id="description" rows="3" required></textarea>
                 </div>
-                <button type="submit" class="btn-submit">Submit Lost Item</button>
+                <button type="submit" id="submitBtn" class="btn-submit">Submit Lost Item</button>
             </form>
         </div>
 
         <div class="panel">
             <h2>📋 Reported Items Feed</h2>
             <div class="feed-header">
-                <input type="text" placeholder="Search entries...">
-                <button class="btn-search">Search</button>
+                <input type="text" id="searchInput" placeholder="Search entries...">
+                <button class="btn-search" onclick="searchItems()">Search</button>
             </div>
             <div class="filter-buttons">
-                <button class="btn-filter">All Items</button>
-                <button class="btn-filter">Lost Only</button>
-                <button class="btn-filter">Found Only</button>
+                <button class="btn-filter" onclick="filterItems('all')">All Items</button>
+                <button class="btn-filter" onclick="filterItems('lost')">Lost Only</button>
+                <button class="btn-filter" onclick="filterItems('found')">Found Only</button>
             </div>
             
             <div class="items-list">
                 {% if items %}
                     {% for item in items %}
-                        <div class="item-card">
+                        <div class="item-card item-node" data-type="{{ item.status|lower }}" data-name="{{ item.name|lower }}" data-desc="{{ item.description|lower }}">
+                            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
                             {% if item.image_url %}
                                 <img src="{{ item.image_url }}" alt="Item image">
                             {% else %}
@@ -135,56 +151,25 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="empty-state">No items match your criteria.</div>
+                    <div class="empty-state" id="noItemsText">No items match your criteria.</div>
                 {% endif %}
+                <div class="empty-state" id="filterEmptyText" style="display: none;">No items match your criteria.</div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('lostForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = this.querySelector('.btn-submit');
-            submitBtn.innerText = 'Uploading item...';
-            submitBtn.disabled = true;
+        let currentType = 'Lost';
 
-            const formData = new FormData();
-            formData.append('itemName', document.getElementById('itemName').value);
-            formData.append('category', document.getElementById('category').value);
-            formData.append('location', document.getElementById('location').value);
-            formData.append('date', document.getElementById('date').value);
-            formData.append('contact', document.getElementById('contact').value);
-            formData.append('description', document.getElementById('description').value);
-            
-            const imageFile = document.getElementById('image').files[0];
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+        function toggleFormType(type) {
+            currentType = type;
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const locationLabel = document.getElementById('locationLabel');
+            const dateLabel = document.getElementById('dateLabel');
 
-            try {
-                const response = await fetch('/report-lost', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    const result = await response.json();
-                    if (result.error) {
-                        alert("Error: " + result.error);
-                        submitBtn.innerText = 'Submit Lost Item';
-                        submitBtn.disabled = false;
-                    }
-                }
-            } catch (err) {
-                alert("Network error occurred.");
+            if (type === 'Lost') {
+                formTitle.innerText = '🔴 Report Lost Item';
                 submitBtn.innerText = 'Submit Lost Item';
-                submitBtn.disabled = false;
-            }
-        });
-    </script>
-
-</body>
-</html>
+                submitBtn.style.backgroundColor = '#ef5350';
+                locationLabel.innerText = 'Location Lost';
