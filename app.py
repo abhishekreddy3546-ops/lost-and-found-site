@@ -97,7 +97,12 @@ def report_lost():
         db.session.add(new_item)
         db.session.commit()
         
-        return redirect(url_for('home'))
+        # FIXED: Return clean JSON status to allow JavaScript pipelines to execute updates
+        return jsonify({
+            "status": "success",
+            "message": "Report logged cleanly in backend pipeline",
+            "item_id": new_item.id
+        }), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
