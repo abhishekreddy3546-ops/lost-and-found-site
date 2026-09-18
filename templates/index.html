@@ -91,9 +91,7 @@
                 </label>
             </div>
 
-            <!-- Standard Form Submission Method - Faster and 100% Reliable -->
             <form action="/report-lost" method="POST" enctype="multipart/form-data">
-                <!-- Secret status holder -->
                 <input type="hidden" id="statusField" name="status" value="Lost">
 
                 <div class="form-group">
@@ -162,3 +160,6 @@
                                 <p><strong>Location:</strong> {{ item.location }}</p>
                                 <p><strong>Date:</strong> {{ item.date }}</p>
                                 <p><strong>Contact:</strong> {{ item.contact }}</p>
+                                <p><strong>Description:</strong> {{ item.description }}</p>
+                            </div>
+                        </div>
