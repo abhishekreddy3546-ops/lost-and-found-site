@@ -56,7 +56,7 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
-    <h1>🕵️‍♂️ Last and Found</h1>
+    <h1>Lost and Found</h1>
     <p class="tagline">Notice board updates dynamically. All items automatically delete after 2 days.</p>
     
     <div class="forms-container">
